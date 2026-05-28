@@ -3,115 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <title>Proxy Launcher</title>
-    <style>
-        /* 背景を白に変更 */
-        body {
-            background-color: #ffffff;
-            color: #333333;
-            font-family: Arial, sans-serif;
-            margin: 0; padding: 0;
-            display: flex; flex-direction: column; align-items: center;
-            height: 100vh; overflow: hidden; user-select: none;
-        }
-        /* 上部タイトルエリア */
-        .header { 
-            text-align: center; 
-            padding: 25px 0 15px 0; 
-            width: 100%; 
-            background: linear-gradient(to bottom, rgba(0,0,0,0.05), transparent); 
-        }
-        h1 { 
-            color: #111111; 
-            font-size: 24px; 
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.1); 
-            margin: 0; 
-            font-weight: bold; 
-            letter-spacing: 2px;
-        }
-        /* サーバーリストの背景（横幅を 750px から 1000px に大きく拡大） */
-        .container { 
-            flex: 1; 
-            width: 100%; 
-            max-width: 1000px; 
-            background-color: rgba(0, 0, 0, 0.05); 
-            border-left: 1px solid #ddd;
-            border-right: 1px solid #ddd;
-            box-shadow: inset 0 10px 10px rgba(0,0,0,0.03), inset 0 -10px 10px rgba(0,0,0,0.03); 
-            overflow-y: auto; 
-            padding: 10px 0; 
-        }
-        /* 接続テスト中アニメーション */
-        .searching-text { text-align: center; color: #555555; font-size: 16px; margin: 15px 0; }
-        .dots::after { content: ''; animation: blink 1.5s infinite step-start; }
-        @keyframes blink { 0% { content: ''; } 33% { content: ' .'; } 66% { content: ' . .'; } 100% { content: ' . . .'; } }
-        
-        /* サーバーアイテム（横に伸びたので文字が見やすくなります） */
-        .server-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; border: 2px solid transparent; margin: 4px 15px; background-color: rgba(0,0,0,0.02); }
-        .server-item:hover { background-color: rgba(0,0,0,0.04); }
-        .server-item.selected { border: 2px solid #333333; background-color: rgba(0,0,0,0.08); }
-        .server-info { display: flex; flex-direction: column; }
-        .server-name { font-size: 18px; color: #111111; font-weight: bold; }
-        .server-sub { color: #666666; font-size: 15px; margin-top: 6px; overflow: hidden; text-overflow: ellipsis; max-width: 750px; white-space: nowrap; }
-        
-        /* 📶 マイクラ風アンテナアイコン */
-        .status-box { display: flex; align-items: flex-end; gap: 2px; height: 24px; width: 22px; padding-bottom: 2px; }
-        .signal-bar { width: 3px; background-color: #cccccc; box-shadow: 1px 1px rgba(0,0,0,0.1); }
-        .bar1 { height: 4px; }
-        .bar2 { height: 8px; }
-        .bar3 { height: 12px; }
-        .bar4 { height: 16px; }
-        .bar5 { height: 20px; }
-        .signal-offline { color: #ff3333; font-size: 18px; line-height: 24px; width: 22px; text-align: center; }
-
-        /* 下部ボタンエリア */
-        .footer { width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.05), transparent); padding: 20px 0 30px 0; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-        .button-row { display: flex; gap: 14px; width: 100%; max-width: 720px; justify-content: center; }
-        button { flex: 1; max-width: 220px; background-color: #f0f0f0; color: #333333; border: 2px solid #999999; padding: 12px 0; font-size: 16px; cursor: pointer; box-shadow: inset -2px -2px #dddddd, inset 2px 2px #ffffff; box-sizing: border-box; font-weight: bold; }
-        button:hover:not(:disabled) { background-color: #e0e0e0; color: #000000; outline: 2px solid #333333; outline-offset: -4px; }
-        button:disabled { background-color: #e8e8e8; color: #bbbbbb; border-color: #cccccc; box-shadow: none; cursor: not-allowed; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); justify-content: center; align-items: center; z-index: 10; }
-        .modal-content { background-color: #ffffff; border: 4px solid #dddddd; padding: 25px; width: 420px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); text-align: center; color: #333; }
-        .modal p { margin: 12px 0 6px 0; font-size: 15px; color: #555555; text-align: left; font-weight: bold; }
-        .modal input { width: 100%; background-color: #fafafa; border: 2px solid #cccccc; color: #333333; padding: 10px; box-sizing: border-box; font-size: 15px; margin-bottom: 12px; }
-        .modal input:focus { outline: 2px solid #333333; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+    <!-- 🌌 サイバー背景用のキャンバス -->
+    <canvas id="cyberBg"></canvas>
 
     <div class="header">
         <h1>プロキシランチャー</h1>
     </div>
 
     <div class="container">
-        <!-- JSで消去しやすいように、id="searchingText" を追加 -->
         <div class="searching-text" id="searchingText">プロキシサーバーを接続テスト中<span class="dots"></span></div>
         <div id="serverList"></div>
     </div>
 
     <div class="footer">
         <div class="button-row">
-            <button id="btnConnect" disabled onclick="connectServer()">サーバーに接続</button>
-            <button onclick="alert('ダイレクト接続（未実装）')">ダイレクト接続</button>
-            <button onclick="openModal(false)">サーバーを追加</button>
+            <button id="btnConnect" disabled>サーバーに接続</button>
+            <button id="btnSettingsOpen">設定</button>
+            <button id="btnServerAddOpen">サーバーを追加</button>
         </div>
         <div class="button-row">
-            <button id="btnEdit" disabled onclick="editServer()">編集</button>
-            <button id="btnDelete" disabled onclick="deleteServer()">削除</button>
-            <button id="btnRefresh" onclick="fetchProxyStatus()">更新</button>
+            <button id="btnEdit" disabled>編集</button>
+            <button id="btnDelete" disabled>削除</button>
+            <button id="btnRefresh">更新</button>
         </div>
     </div>
 
+    <!-- サーバー登録・編集用モーダル（一括追加エリアを統合） -->
     <div class="modal" id="proxyModal">
-        <div class="modal-content">
+        <div class="modal-content" style="width: 460px;">
             <h2 id="modalTitle" style="margin:0; font-size:18px;">サーバー情報の追加</h2>
-            <p>プロキシの表示名（例: Utopia串）</p>
-            <input type="text" id="inputName" placeholder="例: My Utopia Proxy">
-            <p>プロキシのURL (串のリンク)</p>
-            <input type="text" id="inputAddress" placeholder="例: https://utopia-link.com">
-            <p style="color:#ff6600; font-size:12px; margin-top:5px; text-align:left;">※入力した串のURLへ直接ジャンプできます。</p>
+            
+            <!-- 🛠️ モード切り替えタブ -->
+            <div style="display:flex; gap:10px; margin: 15px 0 5px 0; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">
+                <span id="tabSingle" style="cursor:pointer; font-weight:bold; font-size:13px; padding:4px 8px; border-bottom:2px solid var(--title-color);">単体追加</span>
+                <span id="tabBulk" style="cursor:pointer; font-weight:bold; font-size:13px; padding:4px 8px; color:gray;">一括追加</span>
+            </div>
+
+            <!-- ① 単体追加用の入力欄 -->
+            <div id="areaSingleMode">
+                <p>プロキシの表示名</p>
+                <input type="text" id="inputName" placeholder="例: My Utopia Proxy">
+                <p>プロキシのURL (串のリンク)</p>
+                <input type="text" id="inputAddress" placeholder="例: https://utopia-link.com">
+            </div>
+
+            <!-- ② 🛠️ 一括追加用の入力欄（デフォルト非表示） -->
+            <div id="areaBulkMode" style="display:none; text-align:left;">
+                <p>複数URLを一括入力（改行、スペース、カンマ区切り）</p>
+                <textarea id="textareaBulk" rows="6" placeholder="【入力例1：URLのみ】&#10;https://proxy1.com&#10;https://proxy2.com&#10;&#10;【入力例2：名前とURLペア】&#10;プロキシA https://proxyA.com&#10;プロキシB,https://proxyB.com" style="width:100%; background-color: var(--input-bg); border: 2px solid var(--border-color); color: var(--text-color); padding: 10px; box-sizing: border-box; font-size: 13px; font-family: monospace; resize: vertical; margin-bottom: 12px;"></textarea>
+                <p style="color:#666; font-size:11px; margin:0 0 10px 0;">※名前が無い場合は自動的にURLのドメイン名が登録名になります。</p>
+            </div>
+            
+            <p>所属フォルダ</p>
+            <select id="selectFolder"></select>
+
             <div class="button-row" style="margin-top:20px; gap:10px;">
-                <button onclick="saveServer()">完了</button>
-                <button onclick="closeModal()">キャンセル</button>
+                <button id="btnModalSave">完了</button>
+                <button id="btnModalClose">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 設定用モーダル -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h2 style="margin:0; font-size:18px; padding-bottom:10px; border-bottom:2px solid var(--border-color);">ランチャー環境設定</h2>
+            
+            <div class="setting-row">
+                <span style="font-weight:bold;">ダークモード (Dark Mode)</span>
+                <button id="btnToggleDark" style="max-width:100px; padding:6px 0; font-size:14px;">OFF</button>
+            </div>
+
+            <div class="setting-section-title">フォルダ管理</div>
+            <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                <span style="font-size:13px; opacity:0.8;">新しいフォルダを追加：</span>
+                <div style="display:flex; width:100%; gap:8px;">
+                    <input type="text" id="inputNewFolder" placeholder="フォルダ名を入力" style="margin:0; padding:6px; background:var(--input-bg); border:1px solid var(--border-color); color:var(--text-color); flex:1;">
+                    <button id="btnCreateFolder" style="max-width:80px; padding:6px 0; font-size:13px;">追加</button>
+                </div>
+            </div>
+
+            <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 8px; border-bottom: none;">
+                <span style="font-size:13px; opacity:0.8;">フォルダの名前を変更：</span>
+                <div style="display:flex; width:100%; gap:8px; align-items:center; margin-bottom: 4px;">
+                    <select id="selectRenameTarget" style="margin:0; padding:6px; flex:1; height:33px; font-size:13px;"></select>
+                    <span style="font-size:12px;">➔</span>
+                    <input type="text" id="inputRenameFolder" placeholder="新しい名前" style="margin:0; padding:6px; background:var(--input-bg); border:1px solid var(--border-color); color:var(--text-color); flex:1; font-size:13px;">
+                </div>
+                <button id="btnRenameFolder" style="max-width:100%; padding:6px 0; font-size:13px; width:100px; align-self:flex-end;">名前を変更</button>
+            </div>
+
+            <div class="button-row" style="margin-top:25px;">
+                <button id="btnSettingsClose" style="max-width:100%;">閉じる</button>
             </div>
         </div>
     </div>
